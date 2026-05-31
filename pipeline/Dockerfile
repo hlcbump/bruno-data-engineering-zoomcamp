@@ -16,8 +16,8 @@ COPY pyproject.toml .python-version uv.lock ./
 # irei obter todas as dependencias que eu tenho fora do container
 RUN uv sync --locked
 
-# copiar pipeline.py para o container
-COPY pipeline.py .
+# copiar ingest_data.py para o container
+COPY ingest_data.py .
 
-# irá rodar o pipeline.py ao digitar o comando docker run
-ENTRYPOINT [ "python", "pipeline.py" ]
+# irá rodar o ingest_data.py ao digitar o comando docker run
+ENTRYPOINT [ "uv", "run", "python", "ingest_data.py" ]
