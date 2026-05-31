@@ -4,6 +4,7 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from tqdm.auto import tqdm
+import click
 
 # tipos corretos de cada coluna
 dtype = {
@@ -31,17 +32,16 @@ parse_dates = [
     "tpep_dropoff_datetime"
 ]
 
-def run():
-    pg_user = "root"
-    pg_password = "root"
-    pg_host = "localhost"
-    pg_port = 9876
-    pg_db = "ny_taxi"
-
-    year = 2021
-    month = 1
-
-    target_table = "yellow_taxi_data"
+@click.command()
+@click.option('--pg-user', default='root', help='PostgreSQL user')
+@click.option('--pg-password', default='root', help='PostgreSQL password')
+@click.option('--pg-host', default='localhost', help='PostgreSQL host')
+@click.option('--pg-port', default=9876, type=int, help='PostgreSQL port')
+@click.option('--pg-db', default='ny_taxi', help='PostgreSQL database name')
+@click.option('--target-table', default='yellow_taxi_data', help='Target table name')
+@click.option('--year', default=2021, type=int, help='Dataset year')
+@click.option('--month', default=1, type=int, help='Dataset month')
+def run(pg_user, pg_password, pg_host, pg_port, pg_db, target_table, year, month):
 
     chunksize = 100000
 
@@ -50,7 +50,7 @@ def run():
     url = f'{prefix}yellow_tripdata_{year}-{month:02d}.csv.gz'
 
     # cria a conexão com o banco de dados
-    engine = create_engine(f'postgresql+psycopg://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_db}')
+    engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_db}')
 
     # lê o csv em chunks (obs: o df_iter não precisa estar dentro do for para funcionar)
     df_iter = pd.read_csv(
@@ -79,6 +79,16 @@ def run():
             con=engine, 
             if_exists='append'
             )
+        
+    df_zones = pd.read_csv('https://github.com/DataTalksClub/nyc-tlc-data/releases/download/misc/taxi_zone_lookup.csv')
+    df_zones.to_sql(
+        name='zones',
+        con=engine,
+        if_exists='replace',
+        index=False
+        )
+        
+    pass
         
 if __name__ == '__main__':
     run()
